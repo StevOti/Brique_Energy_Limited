@@ -11,6 +11,10 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 from pathlib import Path
+import os
+from django.core.management.utils import get_random_secret_key
+import sys
+import dj_database_url
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -21,14 +25,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-9!m(3+9mfw)59_zv@hn6wfj5x&tnf&&6i!)8@nidlzcfvk))*t'
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', get_random_secret_key())
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv("DEBUG", "False") == "True"
+
+DEVELOPMENT_MODE = os.getenv("DEVELOPMENT_MODE", "False") == "True"
 
 STRIPE_SECRET_KEY = 'sk_test_51P1Aoz2L5MYpLD07lLQts05MtU4lyzIOxnacigjl5HB26b0WKOXURIYpmxygtWKvEzLQMxNaxYuJ70hxFKMN8dOC00WkdcHf84'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = os.getenv("DJANGO_ALLOWED_HOSTS", "164.92.123.105").split(",")
 
 
 # Application definition
@@ -90,13 +96,19 @@ WSGI_APPLICATION = 'ck_Love_and_Light.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+if DEVELOPMENT_MODE is True:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": os.path.join(BASE_DIR, "db.sqlite3"),
+        }
     }
-}
-
+elif len(sys.argv) > 0 and sys.argv[1] != 'collectstatic':
+    if os.getenv("DATABASE_URL", None) is None:
+        raise Exception("DATABASE_URL environment variable not defined")
+    DATABASES = {
+        "default": dj_database_url.parse(os.environ.get("DATABASE_URL")),
+    }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
@@ -135,46 +147,10 @@ USE_TZ = True
 STATIC_URL = 'static/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / '/media/'
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-MPESA_ENVIRONMENT = 'sandbox'
-
-# Credentials for the daraja app
-
-MPESA_CONSUMER_KEY = 'aSt7DKZS2swiXMAxywmDk9ij54j6kRRMNijhhUcIFBimAuWz'
-MPESA_CONSUMER_SECRET = 'MGKyEr5dzq9m3qZMyz5wHe3exUP7ihqXGWjBnJDbwboY6bizg0nilF4Guh8hwGne'
-
-#Shortcode to use for transactions. For sandbox  use the Shortcode 1 provided on test credentials page
-
-MPESA_SHORTCODE = '174379'
-
-# Shortcode to use for Lipa na MPESA Online (MPESA Express) transactions
-# This is only used on sandbox, do not set this variable in production
-# For sandbox use the Lipa na MPESA Online Shorcode provided on test credentials page
-
-MPESA_EXPRESS_SHORTCODE = '174379'
-
-# Type of shortcode
-# Possible values:
-# - paybill (For Paybill)
-# - till_number (For Buy Goods Till Number)
-
-MPESA_SHORTCODE_TYPE = 'paybill'
-
-# Lipa na MPESA Online passkey
-# Sandbox passkey is available on test credentials page
-# Production passkey is sent via email once you go live
-
-MPESA_PASSKEY = 'hVLuu1Ao0A4qvrejyUh8hNjc8EpEl4pHVfjLRyhJYayCJIMGei0LY9ByTd47JwmAcZniXcrW3odwoMXm/Ijhg7saloveYpSShvuZTWG5LjmJjp12n5H8XYoO0chml5NFFIyUmYKJ6EhJjGJXvcA8j+dkTDvWKyTgsOeuURyuJ480818SWivOawr0nJDVv+yAyjcbG630xpjVkEwFuhaAtTrsXKj3wuZtjhUYRF/g6XmVaw8nHeWkRbTjEpQq0G4wL+BDT3n5i6QltALPTxQNMkfFpRE2o4qx6815u4B6mqI6MEEmZ/gxvtDZPgztoTSO3+wVg1eMYvKK0bezSNweww=='
-
-# Username for initiator (to be used in B2C, B2B, AccountBalance and TransactionStatusQuery Transactions)
-
-MPESA_INITIATOR_USERNAME = 'MyApp'
-
-# Plaintext password for initiator (to be used in B2C, B2B, AccountBalance and TransactionStatusQuery Transactions)
-
-MPESA_INITIATOR_SECURITY_CREDENTIAL = 'Blackbutn02$'
